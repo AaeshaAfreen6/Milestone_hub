@@ -35,7 +35,6 @@ $milestones = $ms->fetchAll(PDO::FETCH_ASSOC);
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
     $message = trim($_POST['message']);
 
-    // Check if already sent
     $check = $pdo->prepare("SELECT id FROM proposals WHERE project_id = ? AND freelancer_id = ?");
     $check->execute([$project_id, $freelancer_id]);
 
@@ -56,59 +55,143 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="../assets/css/dashboard.css">
     <style>
-        .proposal-card {
+        .proposal-wrapper {
+            max-width: 800px;
+        }
+
+        .page-subtitle {
+            font-size: 13px;
+            color: #888780;
+            margin-bottom: 24px;
+            margin-top: -14px;
+        }
+
+        /* Project details table */
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
             background: #fff;
             border-radius: 12px;
-            padding: 24px;
+            overflow: hidden;
             border: 0.5px solid #e8e6e6;
-            max-width: 700px;
-        }
-
-        .project-info {
-            background: #d8f3dc;
-            border-radius: 10px;
-            padding: 16px;
             margin-bottom: 20px;
         }
 
-        .project-info h3 {
-            font-size: 15px;
+        .detail-table thead tr {
+            background: #1b4332;
+            color: #fff;
+        }
+
+        .detail-table thead th {
+            padding: 12px 16px;
+            font-size: 13px;
             font-weight: 500;
-            color: #1b4332;
-            margin-bottom: 6px;
+            text-align: left;
         }
 
-        .project-info p {
+        .detail-table tbody tr {
+            border-bottom: 0.5px solid #f0eeee;
+        }
+
+        .detail-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .detail-table tbody tr:nth-child(even) {
+            background: #f8fffe;
+        }
+
+        .detail-table tbody td {
+            padding: 12px 16px;
             font-size: 13px;
-            color: #2d6a4f;
+            color: #333;
         }
 
-        .milestones-list {
+        .detail-table tbody td:first-child {
+            font-weight: 500;
+            color: #081c15;
+            width: 180px;
+            background: #f8f8f8;
+        }
+
+        /* Milestone table */
+        .milestone-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 0.5px solid #e8e6e6;
             margin-bottom: 20px;
         }
 
-        .ms-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 0;
-            border-bottom: 0.5px solid #f0eeee;
-            font-size: 13px;
-            color: #444;
+        .milestone-table thead tr {
+            background: #2d6a4f;
+            color: #fff;
         }
 
-        .ms-num {
-            width: 24px;
-            height: 24px;
+        .milestone-table thead th {
+            padding: 12px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: left;
+        }
+
+        .milestone-table tbody tr {
+            border-bottom: 0.5px solid #f0eeee;
+        }
+
+        .milestone-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .milestone-table tbody tr:nth-child(even) {
+            background: #f8fffe;
+        }
+
+        .milestone-table tbody td {
+            padding: 12px 16px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .ms-order {
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             background: #2d6a4f;
             color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
-            flex-shrink: 0;
+        }
+
+        .lock-badge {
+            display: inline-block;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        /* Proposal form */
+        .form-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            border: 0.5px solid #e8e6e6;
+        }
+
+        .form-section h4 {
+            font-size: 14px;
+            font-weight: 500;
+            color: #081c15;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 0.5px solid #f0eeee;
         }
 
         .field label {
@@ -138,8 +221,14 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
             background: #fff;
         }
 
+        .form-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
         .btn-submit {
-            padding: 12px 32px;
+            padding: 10px 28px;
             background: linear-gradient(135deg, #2d6a4f, #1b4332);
             border: none;
             border-radius: 10px;
@@ -148,11 +237,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
             font-weight: 500;
             cursor: pointer;
             font-family: inherit;
-            margin-top: 8px;
         }
 
         .btn-back {
-            padding: 12px 20px;
+            padding: 10px 20px;
             background: transparent;
             border: 1.5px solid #e8e6e6;
             border-radius: 10px;
@@ -161,7 +249,16 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
             cursor: pointer;
             font-family: inherit;
             text-decoration: none;
-            margin-right: 10px;
+            display: inline-block;
+        }
+
+        .section-heading {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2d6a4f;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .alert {
@@ -173,6 +270,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 
         .alert-error   { background: #FEE2E2; color: #B91C1C; }
         .alert-success { background: #d8f3dc; color: #1b4332; }
+        .alert-success a { color: #1b4332; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -196,50 +294,108 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
     </div>
 
     <div class="main">
-        <h2 class="page-title">Send Proposal</h2>
+        <div class="proposal-wrapper">
 
-        <?php if($error): ?>
-            <div class="alert alert-error"><?= $error ?></div>
-        <?php endif; ?>
+            <h2 class="page-title">Send Proposal</h2>
+            <p class="page-subtitle">Review the project details before sending your proposal</p>
 
-        <?php if($success): ?>
-            <div class="alert alert-success">
-                <?= $success ?> <a href="browse_project.php" style="color:#1b4332;font-weight:600">Back to projects →</a>
-            </div>
-        <?php endif; ?>
+            <?php if($error): ?>
+                <div class="alert alert-error"><?= $error ?></div>
+            <?php endif; ?>
 
-        <div class="proposal-card">
-
-            <!-- Project info -->
-            <div class="project-info">
-                <h3><?= htmlspecialchars($project['title']) ?></h3>
-                <p>Client: <?= htmlspecialchars($project['client_name']) ?> &nbsp;·&nbsp; Budget: Rs. <?= number_format($project['total_budget'], 2) ?></p>
-            </div>
-
-            <!-- Milestones -->
-            <p style="font-size:13px;font-weight:500;color:#444;margin-bottom:10px">Project milestones:</p>
-            <div class="milestones-list">
-                <?php foreach($milestones as $m): ?>
-                    <div class="ms-item">
-                        <div class="ms-num"><?= $m['order_number'] ?></div>
-                        <div>
-                            <strong><?= htmlspecialchars($m['title']) ?></strong>
-                            &nbsp;·&nbsp; Rs. <?= number_format($m['amount'], 2) ?>
-                            &nbsp;·&nbsp; Due: <?= date('d M Y', strtotime($m['due_date'])) ?>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-
-            <!-- Proposal form -->
-            <form method="POST">
-                <div class="field" style="margin-bottom:20px">
-                    <label>Your proposal message</label>
-                    <textarea name="message" placeholder="Write why you are the right person for this project. Mention your experience, timeline, and approach..." required></textarea>
+            <?php if($success): ?>
+                <div class="alert alert-success">
+                    <?= $success ?>
+                    <a href="browse_project.php">← Back to projects</a>
                 </div>
-                <a href="browse_project.php" class="btn-back">Cancel</a>
-                <button type="submit" class="btn-submit">Send Proposal</button>
-            </form>
+            <?php endif; ?>
+
+            <!-- Project Details Table -->
+            <p class="section-heading">Project Details</p>
+            <table class="detail-table">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Project Title</td>
+                        <td><?= htmlspecialchars($project['title']) ?></td>
+                    </tr>
+                    <tr>
+                        <td>Client Name</td>
+                        <td><?= htmlspecialchars($project['client_name']) ?></td>
+                    </tr>
+                    <tr>
+                        <td>Description</td>
+                        <td><?= htmlspecialchars($project['description']) ?></td>
+                    </tr>
+                    <tr>
+                        <td>Total Budget</td>
+                        <td><strong>Rs. <?= number_format($project['total_budget'], 2) ?></strong></td>
+                    </tr>
+                    <tr>
+                        <td>Status</td>
+                        <td><span style="background:#d8f3dc;color:#1b4332;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">Open</span></td>
+                    </tr>
+                    <tr>
+                        <td>Posted On</td>
+                        <td><?= date('d M Y', strtotime($project['created_at'])) ?></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Milestones Table -->
+            <p class="section-heading">Project Milestones</p>
+            <table class="milestone-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Milestone Title</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Due Date</th>
+                        <th>Lock Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach($milestones as $m): ?>
+                    <tr>
+                        <td>
+                            <div class="ms-order"><?= $m['order_number'] ?></div>
+                        </td>
+                        <td><?= htmlspecialchars($m['title']) ?></td>
+                        <td><?= htmlspecialchars($m['description']) ?></td>
+                        <td><strong>Rs. <?= number_format($m['amount'], 2) ?></strong></td>
+                        <td><?= date('d M Y', strtotime($m['due_date'])) ?></td>
+                        <td>
+                            <?php if($m['order_number'] == 1): ?>
+                                <span style="background:#d8f3dc;color:#1b4332;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500">Unlocked</span>
+                            <?php else: ?>
+                                <span class="lock-badge">🔒 Locked</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+
+            <!-- Proposal Form -->
+            <div class="form-section">
+                <h4>Write Your Proposal</h4>
+                <form method="POST">
+                    <div class="field">
+                        <label>Your proposal message</label>
+                        <textarea name="message" placeholder="Write why you are the right person for this project. Mention your experience, timeline, and approach..." required></textarea>
+                    </div>
+                    <div class="form-buttons">
+                        <a href="browse_project.php" class="btn-back">← Cancel</a>
+                        <button type="submit" class="btn-submit">Send Proposal</button>
+                    </div>
+                </form>
+            </div>
 
         </div>
     </div>

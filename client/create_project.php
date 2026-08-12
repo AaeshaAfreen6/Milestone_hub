@@ -8,8 +8,8 @@ if(!isset($_SESSION['user_id']) || $_SESSION['user_role'] != 'client'){
 }
 
 $client_id = $_SESSION['user_id'];
-$error = "";
-$success = "";
+$error = "something went wrong";
+$success = "created successfully!";
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
     $title       = trim($_POST['title']);

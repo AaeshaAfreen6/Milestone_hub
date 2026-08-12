@@ -42,7 +42,7 @@ foreach($projects as $p){
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="../assets/css/dashboard.css">
 </head>
-<body>
+<body>  
 
 <!-- TOPBAR -->
 <div class="topbar">
