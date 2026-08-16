@@ -8,8 +8,8 @@ if(!isset($_SESSION['user_id']) || $_SESSION['user_role'] != 'client'){
 }
 
 $client_id = $_SESSION['user_id'];
-$error = "something went wrong";
-$success = "created successfully!";
+$error = "";
+$success = "";
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
     $title       = trim($_POST['title']);
@@ -198,8 +198,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
     <div class="sidebar">
         <a href="dashboard.php" class="nav-item">Dashboard</a>
         <a href="create_project.php" class="nav-item active">+ Create project</a>
-        <a href="view_project.php" class="nav-item">My projects</a>
         <a href="approve_milestone.php" class="nav-item">Approve milestones</a>
+         <a href="../landing.php" class="nav-item">← Home</a>
     </div>
 
     <!-- MAIN -->
@@ -265,7 +265,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
                     </div>
                     <div class="field">
                         <label>Due Date</label>
-                        <input type="date" name="ms_date[]" required/>
+                        <input type="date" name="ms_date[]" id="ms_date" min="<?= date('Y-m-d') ?>" required/>
                     </div>
                 </div>
             </div>

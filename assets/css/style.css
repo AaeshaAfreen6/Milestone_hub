@@ -32,7 +32,7 @@ body {
     width: 60px;
     height: 60px;
     border-radius: 16px;
-    background: linear-gradient(135deg,#47928e, rgb(6, 62, 53));
+    background: linear-gradient(135deg,#47928e,rgba(63, 137, 128, 0.1));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -56,7 +56,7 @@ body {
 .divider {
     height: 1px;
     
-    background: #f0eeee;
+    background:#f0eeee;
     margin: 20px 0;
 }
 
@@ -116,7 +116,7 @@ body {
     border: 1.5px solid #e8e6e6;
     border-radius: 10px;
     font-size: 14px;
-    color: #1a2e27;
+    color: #316461;
     background: #fafafa;
     outline: none;
 }
@@ -164,6 +164,7 @@ body {
     font-weight: 500;
 }
 
+
 .alert {
     padding: 10px 14px;
     border-radius: 8px;
@@ -172,4 +173,40 @@ body {
 }
 
 .alert-error   { background: #FEE2E2; color: #B91C1C; }
-.alert-success { background: #E1F5EE; color: #0F6E56; }
+.alert-success { background: #E1F5EE; color: #47928e; }
+.back-home {
+    position: fixed;
+    top: 16px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 8px 16px;
+    border-radius: 20px;
+}
+
+.back-home:hover {
+    background: rgba(255,255,255,0.25);
+}
+
+.back-home-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #47928e, #316461);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 14px;
+}
+
+.back-home-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+}

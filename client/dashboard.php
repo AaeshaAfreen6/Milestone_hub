@@ -61,8 +61,8 @@ foreach($projects as $p){
     <div class="sidebar">
         <a href="dashboard.php" class="nav-item active">Dashboard</a>
         <a href="create_project.php" class="nav-item">+ Create project</a>
-        <a href="view_project.php" class="nav-item">My projects</a>
         <a href="approve_milestone.php" class="nav-item">Approve milestones</a>
+         <a href="../landing.php" class="nav-item">← Home</a>
     </div>
 
     <!-- MAIN -->

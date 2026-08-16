@@ -102,7 +102,7 @@ $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: #2d6a4f;
+            background: #2d6a60;
             color: #fff;
             display: flex;
             align-items: center;
@@ -148,14 +148,14 @@ $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .badge-deposited  { background: #E6F1FB; color: #185FA5; }
         .badge-in-progress{ background: #FEF3C7; color: #92400E; }
         .badge-under-review{ background: #EEEDFE; color: #534AB7; }
-        .badge-approved   { background: #d8f3dc; color: #1b4332; }
+        .badge-approved   { background: #d8f3dc; color: #1b433d; }
         .badge-locked     { background: #F1EFE8; color: #aaa; }
 
         .btn-update {
             display: block;
             width: 100%;
             padding: 7px 14px;
-            background: linear-gradient(135deg, #2d6a4f, #1b4332);
+            background: linear-gradient(135deg, #2d6a66, #1b4342);
             border: none;
             border-radius: 8px;
             color: #fff;
@@ -182,7 +182,7 @@ $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .alert-error   { background: #FEE2E2; color: #B91C1C; }
-        .alert-success { background: #d8f3dc; color: #1b4332; }
+        .alert-success { background: #d8f3dc; color: #1b433e; }
 
         .empty {
             text-align: center;
@@ -199,7 +199,7 @@ $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
             padding: 2px 8px;
             border-radius: 20px;
             background: #d8f3dc;
-            color: #1b4332;
+            color: #1b433e;
             margin-left: 6px;
         }
     </style>
@@ -220,8 +220,8 @@ $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="sidebar">
         <a href="dashboard.php" class="nav-item">Dashboard</a>
         <a href="browse_project.php" class="nav-item">Browse projects</a>
-        <a href="send_proposal.php" class="nav-item">My proposals</a>
         <a href="update_milestone.php" class="nav-item active">My milestones</a>
+         <a href="../landing.php" class="nav-item">← Home</a>
     </div>
 
     <div class="main">

@@ -367,8 +367,8 @@ $milestones = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="sidebar">
         <a href="dashboard.php" class="nav-item">Dashboard</a>
         <a href="create_project.php" class="nav-item">+ Create project</a>
-        <a href="view_project.php" class="nav-item active">My projects</a>
         <a href="approve_milestone.php" class="nav-item">Approve milestones</a>
+         <a href="../landing.php" class="nav-item">← Home</a>
     </div>
 
     <div class="main">
@@ -404,7 +404,28 @@ $milestones = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <div class="proposal-item">
                             <div class="proposal-name"><?= htmlspecialchars($proposal['freelancer_name']) ?></div>
                             <div class="proposal-email"><?= htmlspecialchars($proposal['freelancer_email']) ?></div>
-                            <div class="proposal-msg"><?= htmlspecialchars($proposal['message']) ?></div>
+                           <div class="proposal-msg"><?= htmlspecialchars($proposal['message']) ?></div>
+
+<?php if($proposal['attachment']): ?>
+    <a href="../uploads/<?= $proposal['attachment'] ?>"
+       target="_blank"
+       style="
+           display: inline-flex;
+           align-items: center;
+           gap: 6px;
+           font-size: 12px;
+           color: #316461;
+           background: #e8f5f5;
+           padding: 5px 12px;
+           border-radius: 6px;
+           text-decoration: none;
+           margin-bottom: 10px;
+       ">
+        📎 View attachment
+    </a>
+<?php endif; ?>
+
+<div class="proposal-footer">
                             <div class="proposal-footer">
                                 <span class="badge badge-<?= $proposal['status'] ?>"><?= ucfirst($proposal['status']) ?></span>
                                 <?php if($proposal['status'] == 'pending' && $project['status'] == 'open'): ?>
@@ -419,6 +440,7 @@ $milestones = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
+            
 
             <!-- MILESTONES -->
             <div class="section-card">

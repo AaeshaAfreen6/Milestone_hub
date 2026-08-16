@@ -169,8 +169,8 @@ $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="sidebar">
         <a href="dashboard.php" class="nav-item">Dashboard</a>
         <a href="browse_project.php" class="nav-item active">Browse projects</a>
-        <a href="send_proposal.php" class="nav-item">My proposals</a>
         <a href="update_milestone.php" class="nav-item">My milestones</a>
+         <a href="../landing.php" class="nav-item">← Home</a>
     </div>
 
     <!-- MAIN -->

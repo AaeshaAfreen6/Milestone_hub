@@ -35,17 +35,63 @@ $milestones = $ms->fetchAll(PDO::FETCH_ASSOC);
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
     $message = trim($_POST['message']);
 
+    // Check if freelancer already has an active project
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM projects WHERE freelancer_id = ? AND status = 'active'");
+    $stmt->execute([$freelancer_id]);
+    $active_count = $stmt->fetchColumn();
+
+   if($active_count > 0){
+    $error = "You already have an active project. Please complete your current project before applying for a new one.";
+} else {
     $check = $pdo->prepare("SELECT id FROM proposals WHERE project_id = ? AND freelancer_id = ?");
     $check->execute([$project_id, $freelancer_id]);
 
     if($check->rowCount() > 0){
         $error = "You have already sent a proposal for this project.";
     } else {
-        $stmt = $pdo->prepare("INSERT INTO proposals (project_id, freelancer_id, message, status) VALUES (?, ?, ?, 'pending')");
-        $stmt->execute([$project_id, $freelancer_id, $message]);
-        $success = "Proposal sent successfully!";
+
+        $attachment = null;
+
+        // Handle file upload
+        if(isset($_FILES['attachment']) && $_FILES['attachment']['error'] == 0){
+            $file      = $_FILES['attachment'];
+            $file_name = $file['name'];
+            $file_size = $file['size'];
+            $file_tmp  = $file['tmp_name'];
+            $file_ext  = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+
+            // Validate file type
+            $allowed = ['pdf', 'doc', 'docx'];
+            if(!in_array($file_ext, $allowed)){
+                $error = "Only PDF and Word files are allowed.";
+            }
+            // Validate file size (5MB max)
+            elseif($file_size > 5 * 1024 * 1024){
+                $error = "File size must be less than 5MB.";
+            }
+            else {
+                // Generate unique file name
+                $new_file_name = time() . '_' . $freelancer_id . '.' . $file_ext;
+                $upload_path   = '../uploads/' . $new_file_name;
+
+                if(move_uploaded_file($file_tmp, $upload_path)){
+                    $attachment = $new_file_name;
+                } else {
+                    $error = "Failed to upload file. Please try again.";
+                }
+            }
+        }
+
+        // Insert proposal if no error
+        if(empty($error)){
+            $stmt = $pdo->prepare("INSERT INTO proposals (project_id, freelancer_id, message, status, attachment) VALUES (?, ?, ?, 'pending', ?)");
+            $stmt->execute([$project_id, $freelancer_id, $message, $attachment]);
+            $success = "Proposal sent successfully!";
+        }
     }
 }
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -271,9 +317,59 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
         .alert-error   { background: #FEE2E2; color: #B91C1C; }
         .alert-success { background: #d8f3dc; color: #1b4332; }
         .alert-success a { color: #1b4332; font-weight: 600; }
+        .upload-wrap {
+    position: relative;
+}
+
+.upload-wrap input[type="file"] {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.upload-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border: 1.5px dashed #e8e6e6;
+    border-radius: 10px;
+    background: #fafafa;
+    cursor: pointer;
+    font-size: 13px;
+    color: #888780;
+    transition: all 0.2s;
+}
+
+.upload-label:hover {
+    border-color: #47928e;
+    background: #f0fafa;
+    color: #47928e;
+}
+
+.upload-icon { font-size: 18px; }
     </style>
 </head>
 <body>
+<script>
+function showFileName(input){
+    const fileName = input.files[0]?.name || 'Click to attach PDF or Word file';
+    document.getElementById('file-name-text').textContent = fileName;
+
+    const label = document.querySelector('.upload-label');
+    if(input.files[0]){
+        label.style.borderColor = '#47928e';
+        label.style.color = '#316461';
+        label.style.background = '#f0fafa';
+    }
+}
+</script>
+
+</body>
+</html>
 
 <div class="topbar">
     <div class="topbar-left">
@@ -289,8 +385,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
     <div class="sidebar">
         <a href="dashboard.php" class="nav-item">Dashboard</a>
         <a href="browse_project.php" class="nav-item active">Browse projects</a>
-        <a href="send_proposal.php" class="nav-item">My proposals</a>
         <a href="update_milestone.php" class="nav-item">My milestones</a>
+         <a href="../landing.php" class="nav-item">← Home</a>
     </div>
 
     <div class="main">
@@ -385,11 +481,24 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
             <!-- Proposal Form -->
             <div class="form-section">
                 <h4>Write Your Proposal</h4>
-                <form method="POST">
-                    <div class="field">
-                        <label>Your proposal message</label>
-                        <textarea name="message" placeholder="Write why you are the right person for this project. Mention your experience, timeline, and approach..." required></textarea>
-                    </div>
+                <form method="POST" enctype="multipart/form-data">
+                   <!-- Proposal message -->
+<div class="field">
+    <label>Your proposal message</label>
+    <textarea name="message" placeholder="Write why you are the right person for this project..." required></textarea>
+</div>
+
+<!-- File upload -->
+<div class="field">
+    <label>Attach File <span style="font-size:12px;color:#888;font-weight:400">(optional — PDF or Word only, max 5MB)</span></label>
+    <div class="upload-wrap">
+        <input type="file" name="attachment" id="attachment" accept=".pdf,.doc,.docx" onchange="showFileName(this)"/>
+        <label for="attachment" class="upload-label">
+            <span class="upload-icon">📎</span>
+            <span id="file-name-text">Click to attach PDF or Word file</span>
+        </label>
+    </div>
+</div>
                     <div class="form-buttons">
                         <a href="browse_project.php" class="btn-back">← Cancel</a>
                         <button type="submit" class="btn-submit">Send Proposal</button>
