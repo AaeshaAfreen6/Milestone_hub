@@ -58,6 +58,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['accept_freelancer'])){
     $project = $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
+
 // Approve milestone
 if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['approve_milestone'])){
     $milestone_id = $_POST['milestone_id'];
@@ -460,17 +461,19 @@ $milestones = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
 
                             <!-- Deposit button -->
-                            <?php if($m['status'] == 'pending' && !$m['is_locked'] && $project['status'] == 'active'): ?>
-                               <form method="POST" action="view_project.php?id=<?= $project_id ?>">
-                                  <input type="hidden" name="milestone_id" value="<?= $m['id'] ?>"/>
-                                 <button type="submit" name="deposit_milestone" class="btn-deposit">Mark Deposited</button>
-                                  </form>
-                            <?php endif; ?>
+         <?php if($m['status'] == 'pending' && !$m['is_locked'] && $project['status'] == 'active'): ?>
+    <a href="payment.php?milestone_id=<?= $m['id'] ?>&project_id=<?= $project_id ?>" 
+       class="btn-approve" 
+       style="background:linear-gradient(135deg,#5C2D91,#4a2475);text-decoration:none;display:inline-block;padding:8px 16px;border-radius:8px;color:#fff;font-size:12px">
+        💳 Make Payment
+    </a>
+<?php endif; ?>
 
                             <!-- Approve button -->
                             <?php if($m['status'] == 'under_review'): ?>
                               <form method="POST" action="view_project.php?id=<?= $project_id ?>">
                                  <input type="hidden" name="milestone_id" value="<?= $m['id'] ?>"/>
+                                 
                                    <button type="submit" name="approve_milestone" class="btn-approve">Approve ✓</button>
                             </form>
                             <?php endif; ?>

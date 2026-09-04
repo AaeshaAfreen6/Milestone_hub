@@ -330,6 +330,35 @@ $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 <span class="payment-badge">💰 Deposited</span>
                                             <?php endif; ?>
                                         </div>
+
+                <!-- SUBMISSION BOX — ADD THIS HERE -->
+                <?php if($m['submission_note'] || $m['submission_file'] || $m['submission_link']): ?>
+                    <div style="background:#f8f8f8;border-radius:8px;padding:12px;margin-top:10px;border:1px solid #e0e0e0">
+                        <div style="font-size:12px;font-weight:600;color:#534AB7;margin-bottom:8px">📦 Freelancer Submission</div>
+
+                        <?php if($m['submission_note']): ?>
+                            <div style="font-size:13px;color:#444;margin-bottom:8px;line-height:1.6">
+                                <strong>Description:</strong> <?= htmlspecialchars($m['submission_note']) ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if($m['submission_file']): ?>
+                            <a href="../uploads/<?= $m['submission_file'] ?>" target="_blank"
+                               style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#316461;background:#e8f5f5;padding:5px 12px;border-radius:6px;text-decoration:none;margin-right:8px">
+                                📎 View submitted file
+                            </a>
+                        <?php endif; ?>
+
+                        <?php if($m['submission_link']): ?>
+                            <a href="<?= htmlspecialchars($m['submission_link']) ?>" target="_blank"
+                               style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#185FA5;background:#E6F1FB;padding:5px 12px;border-radius:6px;text-decoration:none">
+                                🔗 View link
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+                <!-- END SUBMISSION BOX -->
+
                                     </div>
                                     <div class="ms-actions">
                                         <span class="badge badge-under-review">Under Review</span>

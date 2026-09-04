@@ -35,13 +35,13 @@ $milestones = $ms->fetchAll(PDO::FETCH_ASSOC);
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
     $message = trim($_POST['message']);
 
-    // Check if freelancer already has an active project
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM projects WHERE freelancer_id = ? AND status = 'active'");
-    $stmt->execute([$freelancer_id]);
-    $active_count = $stmt->fetchColumn();
+ // Check if freelancer already has 3 active projects
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM projects WHERE freelancer_id = ? AND status = 'active'");
+$stmt->execute([$freelancer_id]);
+$active_count = $stmt->fetchColumn();
 
-   if($active_count > 0){
-    $error = "You already have an active project. Please complete your current project before applying for a new one.";
+if($active_count >= 3){
+    $error = "You already have 3 active projects. Please complete one before applying for a new one.";
 } else {
     $check = $pdo->prepare("SELECT id FROM proposals WHERE project_id = ? AND freelancer_id = ?");
     $check->execute([$project_id, $freelancer_id]);
@@ -386,6 +386,7 @@ function showFileName(input){
         <a href="dashboard.php" class="nav-item">Dashboard</a>
         <a href="browse_project.php" class="nav-item active">Browse projects</a>
         <a href="update_milestone.php" class="nav-item">My milestones</a>
+        <a href="my_proposals.php" class="nav-item">My proposals</a>
          <a href="../landing.php" class="nav-item">← Home</a>
     </div>
 

@@ -15,11 +15,12 @@ $error   = "";
 
 // Handle status update
 if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_status'])){
-    $milestone_id = $_POST['milestone_id'];
-    $new_status   = $_POST['new_status'];
-    $old_status   = $_POST['old_status'];
+    $milestone_id    = $_POST['milestone_id'];
+    $new_status      = $_POST['new_status'];
+    $old_status      = $_POST['old_status'];
+    $submission_note = trim($_POST['submission_note'] ?? '');
+    $submission_link = trim($_POST['submission_link'] ?? '');
 
-    // Check milestone belongs to freelancer's project
     $stmt = $pdo->prepare("
         SELECT m.* FROM milestones m
         JOIN projects p ON m.project_id = p.id
@@ -29,19 +30,42 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_status'])){
     $milestone = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if($milestone){
-        // Check locking rule
         if($milestone['is_locked']){
             $error = "This milestone is locked. Previous milestone must be approved first.";
         } else {
-            // Update status
-            $stmt = $pdo->prepare("UPDATE milestones SET status = ? WHERE id = ?");
-            $stmt->execute([$new_status, $milestone_id]);
+
+            $submission_file = null;
+
+            // Handle file upload
+            if(isset($_FILES['submission_file']) && $_FILES['submission_file']['error'] == 0){
+                $file     = $_FILES['submission_file'];
+                $file_ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                $allowed  = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'zip'];
+
+                if(in_array($file_ext, $allowed) && $file['size'] <= 10 * 1024 * 1024){
+                    $new_name = 'submission_' . $milestone_id . '_' . time() . '.' . $file_ext;
+                    if(move_uploaded_file($file['tmp_name'], '../uploads/' . $new_name)){
+                        $submission_file = $new_name;
+                    }
+                }
+            }
+
+            // Update milestone with submission details
+            $stmt = $pdo->prepare("
+                UPDATE milestones 
+                SET status = ?, 
+                    submission_file = ?,
+                    submission_link = ?,
+                    submission_note = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([$new_status, $submission_file, $submission_link, $submission_note, $milestone_id]);
 
             // Log activity
             $stmt = $pdo->prepare("INSERT INTO milestone_logs (milestone_id, changed_by, old_status, new_status, note) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$milestone_id, $freelancer_id, $old_status, $new_status, 'Status updated by freelancer']);
+            $stmt->execute([$milestone_id, $freelancer_id, $old_status, $new_status, 'Submitted for review by freelancer']);
 
-            $success = "Milestone status updated to " . ucfirst(str_replace('_', ' ', $new_status)) . "!";
+            $success = "Milestone submitted for review successfully!";
         }
     }
 }
@@ -57,6 +81,7 @@ $stmt = $pdo->prepare("
 $stmt->execute([$freelancer_id]);
 $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
 
 <!DOCTYPE html>
 <html>
@@ -221,6 +246,7 @@ $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <a href="dashboard.php" class="nav-item">Dashboard</a>
         <a href="browse_project.php" class="nav-item">Browse projects</a>
         <a href="update_milestone.php" class="nav-item active">My milestones</a>
+        <a href="my_proposals.php" class="nav-item">My proposals</a>
          <a href="../landing.php" class="nav-item">← Home</a>
     </div>
 
@@ -295,14 +321,38 @@ $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <button type="submit" name="update_status" class="btn-update">Start Working</button>
                                     </form>
 
-                                <?php elseif($m['status'] == 'in_progress'): ?>
-                                    <span class="badge badge-in-progress">In Progress</span>
-                                    <form method="POST" action="update_milestone.php">
-                                        <input type="hidden" name="milestone_id" value="<?= $m['id'] ?>"/>
-                                        <input type="hidden" name="old_status" value="in_progress"/>
-                                        <input type="hidden" name="new_status" value="under_review"/>
-                                        <button type="submit" name="update_status" class="btn-update">Submit for Review</button>
-                                    </form>
+                               <?php elseif($m['status'] == 'in_progress'): ?>
+    <span class="badge badge-in-progress">In Progress</span>
+    <button class="btn-update" onclick="showSubmitForm(<?= $m['id'] ?>)">Submit for Review</button>
+
+    <!-- Submission form -->
+    <div id="submit-form-<?= $m['id'] ?>" style="display:none;margin-top:12px;background:#f8f8f8;padding:14px;border-radius:8px;border:1px solid #e0e0e0">
+        <form method="POST" action="update_milestone.php" enctype="multipart/form-data">
+            <input type="hidden" name="milestone_id" value="<?= $m['id'] ?>"/>
+            <input type="hidden" name="old_status" value="in_progress"/>
+            <input type="hidden" name="new_status" value="under_review"/>
+
+            <div style="margin-bottom:10px">
+                <label style="font-size:12px;font-weight:500;color:#444;display:block;margin-bottom:5px">Work description</label>
+                <textarea name="submission_note" rows="3" placeholder="Describe what you have completed in this milestone..." style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;outline:none"></textarea>
+            </div>
+
+            <div style="margin-bottom:10px">
+                <label style="font-size:12px;font-weight:500;color:#444;display:block;margin-bottom:5px">Attach file <span style="color:#aaa;font-weight:400">(optional — PDF, Word, Image, ZIP)</span></label>
+                <input type="file" name="submission_file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.zip" style="width:100%;padding:8px;border:1.5px dashed #e0e0e0;border-radius:8px;font-size:13px;background:#fff"/>
+            </div>
+
+            <div style="margin-bottom:12px">
+                <label style="font-size:12px;font-weight:500;color:#444;display:block;margin-bottom:5px">Or paste a link <span style="color:#aaa;font-weight:400">(Google Drive, GitHub, etc.)</span></label>
+                <input type="text" name="submission_link" placeholder="https://drive.google.com/..." style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;font-family:inherit;outline:none"/>
+            </div>
+
+            <div style="display:flex;gap:8px">
+                <button type="submit" name="update_status" class="btn-update" style="flex:1">Submit for Review</button>
+                <button type="button" onclick="hideSubmitForm(<?= $m['id'] ?>)" style="padding:7px 14px;border:1.5px solid #e0e0e0;border-radius:8px;background:#fff;font-size:12px;cursor:pointer;font-family:inherit">Cancel</button>
+            </div>
+        </form>
+    </div>
 
                                 <?php elseif($m['status'] == 'under_review'): ?>
                                     <span class="badge badge-under-review">Under Review</span>
@@ -328,6 +378,15 @@ $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     </div>
 </div>
+<script>
+    function showSubmitForm(id){
+    document.getElementById('submit-form-' + id).style.display = 'block';
+}
+
+function hideSubmitForm(id){
+    document.getElementById('submit-form-' + id).style.display = 'none';
+}
+</script>
 
 </body>
 </html>

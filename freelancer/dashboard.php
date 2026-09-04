@@ -34,6 +34,7 @@ if(!isset($_SESSION['user_id']) || $_SESSION['user_role'] != 'freelancer'){
         <a href="dashboard.php" class="nav-item active">Dashboard</a>
         <a href="browse_project.php" class="nav-item">Browse projects</a>
         <a href="update_milestone.php" class="nav-item">My milestones</a>
+        <a href="my_proposals.php" class="nav-item">My proposals</a>
          <a href="../landing.php" class="nav-item">← Home</a>
     </div>
 

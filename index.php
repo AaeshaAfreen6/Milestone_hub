@@ -16,9 +16,11 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
     // Validate email
     if(empty($email)){
         $error_email = "Email address is required.";
-    } elseif(!preg_match('/^[a-zA-Z0-9._%+-]+@gmail\.com$/', $email)){
-        $error_email = "Please use a valid Gmail address ending with @gmail.com.";
-    }
+    } elseif(!preg_match('/^[a-zA-Z0-9._%+-]+@(gmail\.com|yahoo\.com|yahoo\.co\.np|outlook\.com|hotmail\.com|[a-zA-Z0-9.-]+\.edu)$/', $email)){
+    $error_email = "Please use a valid Gmail, Yahoo, Outlook, or .edu email address.";
+}
+    
+
 
     // Validate password
     if(empty($password)){
