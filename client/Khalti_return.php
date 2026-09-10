@@ -1,37 +1,67 @@
 <?php
+
 include '../includes/db.php';
 session_start();
 
-if(!isset($_SESSION['user_id']) || $_SESSION['user_role'] != 'client'){
-    header("Location: ../index.php");
-    exit();
+// Show errors temporarily while testing
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
+
+// ===============================
+// 1. Get data returned by Khalti
+// ===============================
+
+$pidx           = $_GET['pidx'] ?? null;
+$status         = $_GET['status'] ?? null;
+$transaction_id = $_GET['transaction_id'] ?? null;
+$amount         = $_GET['amount'] ?? null;
+
+
+// ===============================
+// 2. Check pidx
+// ===============================
+
+if (!$pidx) {
+    die("Payment verification failed: pidx not received from Khalti.");
 }
 
-$client_id    = $_SESSION['user_id'];
+
+// ===============================
+// 3. Get data from session
+// ===============================
+
 $milestone_id = $_SESSION['khalti_milestone_id'] ?? null;
 $project_id   = $_SESSION['khalti_project_id'] ?? null;
+$client_id    = $_SESSION['user_id'] ?? null;
 
-// Get data from Khalti redirect
-$pidx   = $_GET['pidx'] ?? null;
-$status = $_GET['status'] ?? null;
-$amount = $_GET['amount'] ?? null;
+if (!$milestone_id || !$project_id || !$client_id) {
+    die("Payment session expired. Please try the payment again.");
+}
 
-if($status == 'Completed' && $pidx){
 
-    // Verify payment with Khalti
-$secret_key = "c69f5739fdd34c9e856fe0fa5d2a799b";
+// ===============================
+// 4. Verify payment with Khalti
+// ===============================
 
 $curl = curl_init();
 
 curl_setopt_array($curl, array(
     CURLOPT_URL => 'https://dev.khalti.com/api/v2/epayment/lookup/',
     CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_ENCODING => '',
+    CURLOPT_MAXREDIRS => 10,
+    CURLOPT_TIMEOUT => 30,
+    CURLOPT_FOLLOWLOCATION => true,
+    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
     CURLOPT_CUSTOMREQUEST => 'POST',
+
     CURLOPT_POSTFIELDS => json_encode([
         'pidx' => $pidx
     ]),
+
     CURLOPT_HTTPHEADER => array(
-        'Authorization: Key c69f5739fdd34c9e856fe0fa5d2a799b,
+        'Authorization: Key .,
         'Content-Type: application/json',
     ),
 ));
@@ -39,59 +69,112 @@ curl_setopt_array($curl, array(
 $response = curl_exec($curl);
 
 if ($response === false) {
-    die("Khalti verification connection failed: " . curl_error($curl));
+    $curl_error = curl_error($curl);
+    curl_close($curl);
+
+    die("Khalti verification failed: " . $curl_error);
 }
 
 curl_close($curl);
 
-$data = json_decode($response, true);
 
-    if(isset($data['status']) && $data['status'] == 'Completed'){
+// ===============================
+// 5. Decode Khalti response
+// ===============================
 
-        // Update milestone status
-        $stmt = $pdo->prepare("UPDATE milestones SET status = 'deposited', payment_status = 'deposited' WHERE id = ?");
-        $stmt->execute([$milestone_id]);
+$result = json_decode($response, true);
 
-        // Log activity
-        $stmt = $pdo->prepare("INSERT INTO milestone_logs (milestone_id, changed_by, old_status, new_status, note) VALUES (?, ?, 'pending', 'deposited', 'Payment verified via Khalti')");
-        $stmt->execute([$milestone_id, $client_id]);
+if (!$result) {
+    die("Invalid response received from Khalti: " . htmlspecialchars($response));
+}
 
-        // Clear session
-        unset($_SESSION['khalti_milestone_id']);
-        unset($_SESSION['khalti_project_id']);
 
-        // Redirect to success page
-        header("Location: payment_success.php?project_id=$project_id&amount=" . ($amount/100));
-        exit();
+// ===============================
+// 6. Check payment status
+// ===============================
 
-    } else {
-        $payment_error = "Payment verification failed. Please contact support.";
-    }
+if (isset($result['status']) && $result['status'] === 'Completed') {
+
+    // Use the verified amount from Khalti if available
+    $verified_amount = $result['total_amount'] ?? $amount;
+
+
+    // ===============================
+    // 7. Update milestone
+    // ===============================
+
+    $stmt = $pdo->prepare("
+        UPDATE milestones
+        SET status = 'deposited',
+            payment_status = 'deposited'
+        WHERE id = ?
+    ");
+
+    $stmt->execute([$milestone_id]);
+
+
+    // ===============================
+    // 8. Log payment activity
+    // ===============================
+
+    $stmt = $pdo->prepare("
+        INSERT INTO milestone_logs
+        (
+            milestone_id,
+            changed_by,
+            old_status,
+            new_status,
+            note
+        )
+        VALUES (?, ?, 'pending', 'deposited', ?)
+    ");
+
+    $stmt->execute([
+        $milestone_id,
+        $client_id,
+        'Payment completed via Khalti. TXN: ' . ($transaction_id ?? $pidx)
+    ]);
+
+
+    // ===============================
+    // 9. Clear Khalti session
+    // ===============================
+
+    unset($_SESSION['khalti_milestone_id']);
+    unset($_SESSION['khalti_project_id']);
+    unset($_SESSION['khalti_amount']);
+
+
+    // ===============================
+    // 10. Redirect to success page
+    // ===============================
+
+    header(
+        'Location: khalti_success.php?project_id=' .
+        urlencode($project_id) .
+        '&amount=' .
+        urlencode(($verified_amount ?? 0) / 100) .
+        '&txn=' .
+        urlencode($transaction_id ?? $pidx)
+    );
+
+    exit();
 
 } else {
-    $payment_error = "Payment was not completed. Status: " . htmlspecialchars($status ?? 'Unknown');
+
+    // ===============================
+    // Payment was not completed
+    // ===============================
+
+    $failed_status = $result['status'] ?? 'Unknown';
+
+    header(
+        'Location: view_project.php?id=' .
+        urlencode($project_id) .
+        '&error=' .
+        urlencode('Payment failed. Status: ' . $failed_status)
+    );
+
+    exit();
 }
 ?>
-
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Payment Failed - Milestone Hub</title>
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f0f0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .card { background: #fff; border-radius: 16px; padding: 40px; text-align: center; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
-        .icon { font-size: 60px; margin-bottom: 16px; }
-        h2 { color: #B91C1C; margin-bottom: 10px; }
-        p { color: #666; font-size: 14px; margin-bottom: 24px; }
-        a { display: inline-block; padding: 12px 24px; background: #5C2D91; color: #fff; border-radius: 8px; text-decoration: none; font-size: 14px; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <div class="icon">❌</div>
-        <h2>Payment Failed</h2>
-        <p><?= htmlspecialchars($payment_error ?? 'Something went wrong') ?></p>
-        <a href="view_project.php?id=<?= $project_id ?>">← Go back to project</a>
-    </div>
-</body>
-</html>

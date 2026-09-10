@@ -1,6 +1,4 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 include '../includes/db.php';
 session_start();
 
@@ -58,7 +56,6 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['accept_freelancer'])){
     $project = $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-
 // Approve milestone
 if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['approve_milestone'])){
     $milestone_id = $_POST['milestone_id'];
@@ -93,31 +90,6 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['approve_milestone'])){
 
     $success = "Milestone approved successfully!";
 }
-// Deposit milestone
-if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['deposit_milestone'])){
-    $milestone_id = $_POST['milestone_id'];
-
-    $stmt = $pdo->prepare("SELECT * FROM milestones WHERE id = ? AND project_id = ?");
-    $stmt->execute([$milestone_id, $project_id]);
-    $milestone = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if($milestone){
-        $stmt = $pdo->prepare("UPDATE milestones SET status = 'deposited', payment_status = 'deposited' WHERE id = ?");
-        $stmt->execute([$milestone_id]);
-
-        $stmt = $pdo->prepare("INSERT INTO milestone_logs (milestone_id, changed_by, old_status, new_status, note) VALUES (?, ?, 'pending', 'deposited', 'Funds deposited by client')");
-        $stmt->execute([$milestone_id, $client_id]);
-
-        $success = "Milestone marked as deposited!";
-    }
-
-    // Refresh project
-    $stmt = $pdo->prepare("SELECT * FROM projects WHERE id = ?");
-    $stmt->execute([$project_id]);
-    $project = $stmt->fetch(PDO::FETCH_ASSOC);
-}
-
-
 
 // Get proposals
 $stmt = $pdo->prepare("
@@ -350,6 +322,26 @@ $milestones = $stmt->fetchAll(PDO::FETCH_ASSOC);
             font-family: inherit;
             margin-top: 6px;
         }
+        .proposal-attachment {
+    margin-top: 8px;
+    margin-bottom: 10px;
+}
+
+.attachment-link {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #f0fafa;
+    color: #2d6a4f;
+    border: 1px solid #d8eeee;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.attachment-link:hover {
+    background: #dff5f2;
+}
     </style>
 </head>
 <body>
@@ -368,8 +360,8 @@ $milestones = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="sidebar">
         <a href="dashboard.php" class="nav-item">Dashboard</a>
         <a href="create_project.php" class="nav-item">+ Create project</a>
+        <a href="view_project.php" class="nav-item active">My projects</a>
         <a href="approve_milestone.php" class="nav-item">Approve milestones</a>
-         <a href="../landing.php" class="nav-item">← Home</a>
     </div>
 
     <div class="main">
@@ -405,28 +397,21 @@ $milestones = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <div class="proposal-item">
                             <div class="proposal-name"><?= htmlspecialchars($proposal['freelancer_name']) ?></div>
                             <div class="proposal-email"><?= htmlspecialchars($proposal['freelancer_email']) ?></div>
-                           <div class="proposal-msg"><?= htmlspecialchars($proposal['message']) ?></div>
+                            <div class="proposal-msg"><?= htmlspecialchars($proposal['message']) ?></div>
+                            <?php if(!empty($proposal['attachment'])): ?>
 
-<?php if($proposal['attachment']): ?>
-    <a href="../uploads/<?= $proposal['attachment'] ?>"
-       target="_blank"
-       style="
-           display: inline-flex;
-           align-items: center;
-           gap: 6px;
-           font-size: 12px;
-           color: #316461;
-           background: #e8f5f5;
-           padding: 5px 12px;
-           border-radius: 6px;
-           text-decoration: none;
-           margin-bottom: 10px;
-       ">
-        📎 View attachment
-    </a>
+    <div class="proposal-attachment">
+        📎
+        <a
+            href="../uploads/<?= rawurlencode($proposal['attachment']) ?>"
+            target="_blank"
+            class="attachment-link"
+        >
+            View Attachment
+        </a>
+    </div>
+
 <?php endif; ?>
-
-<div class="proposal-footer">
                             <div class="proposal-footer">
                                 <span class="badge badge-<?= $proposal['status'] ?>"><?= ucfirst($proposal['status']) ?></span>
                                 <?php if($proposal['status'] == 'pending' && $project['status'] == 'open'): ?>
@@ -441,7 +426,6 @@ $milestones = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
-            
 
             <!-- MILESTONES -->
             <div class="section-card">
@@ -461,21 +445,28 @@ $milestones = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
 
                             <!-- Deposit button -->
-         <?php if($m['status'] == 'pending' && !$m['is_locked'] && $project['status'] == 'active'): ?>
-    <a href="payment.php?milestone_id=<?= $m['id'] ?>&project_id=<?= $project_id ?>" 
-       class="btn-approve" 
-       style="background:linear-gradient(135deg,#5C2D91,#4a2475);text-decoration:none;display:inline-block;padding:8px 16px;border-radius:8px;color:#fff;font-size:12px">
-        💳 Make Payment
-    </a>
+                           <?php if($m['status'] == 'pending' && !$m['is_locked'] && $project['status'] == 'active'): ?>
+   <a href="khalti_pay.php?milestone_id=<?= $m['id'] ?>&project_id=<?= $project_id ?>"
+   style="
+       display:inline-block;
+       padding:8px 16px;
+       background:#5C2D91;
+       color:#fff;
+       border-radius:8px;
+       text-decoration:none;
+       font-size:12px;
+       font-weight:500;
+   ">
+    💜 Pay with Khalti
+</a>
 <?php endif; ?>
 
                             <!-- Approve button -->
                             <?php if($m['status'] == 'under_review'): ?>
-                              <form method="POST" action="view_project.php?id=<?= $project_id ?>">
-                                 <input type="hidden" name="milestone_id" value="<?= $m['id'] ?>"/>
-                                 
-                                   <button type="submit" name="approve_milestone" class="btn-approve">Approve ✓</button>
-                            </form>
+                                <form method="POST">
+                                    <input type="hidden" name="milestone_id" value="<?= $m['id'] ?>"/>
+                                    <button type="submit" name="approve_milestone" class="btn-approve">Approve ✓</button>
+                                </form>
                             <?php endif; ?>
                         </div>
                         <div class="ms-status">

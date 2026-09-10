@@ -527,7 +527,7 @@
         <h1>Manage Freelance Projects with <span>Milestone Precision</span></h1>
         <p>Milestone Hub brings structure, transparency, and accountability to freelancer-client collaboration. Break projects into milestones, track progress, and approve phase by phase.</p>
         <div class="hero-btns">
-            <a href="register.php" class="hero-btn-primary">Get Started Free</a>
+            <a href="register.php" class="hero-btn-primary">Get Started</a>
             <a href="#how-it-works" class="hero-btn-secondary">See How It Works</a>
         </div>
         <div class="hero-stats">
