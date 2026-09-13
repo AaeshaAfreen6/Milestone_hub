@@ -58,7 +58,7 @@ $recent_logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .topbar {
             background: linear-gradient(135deg, #1a3533, #316461);
             padding: 0 28px;
-            height: 60px;
+            height: 80px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -71,7 +71,7 @@ $recent_logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .topbar-left {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
         .logo-icon {
@@ -585,19 +585,19 @@ $recent_logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="sidebar-label">Main Menu</div>
 
         <a href="dashboard.php" class="nav-item active">
-            <div class="nav-icon">🏠</div>
+            <div class="nav-icon">⊞</div>
             Dashboard
         </a>
         <a href="create_project.php" class="nav-item">
-            <div class="nav-icon">➕</div>
+            <div class="nav-icon">⊕</div>
             Create project
         </a>
-        <a href="view_project.php" class="nav-item">
-            <div class="nav-icon">📁</div>
-            My projects
-        </a>
+        <a href="my_projects.php" class="nav-item">
+    <div class="nav-icon">▤</div>
+    My projects
+</a>
         <a href="approve_milestone.php" class="nav-item">
-            <div class="nav-icon">✅</div>
+            <div class="nav-icon">✓</div>
             Approve milestones
         </a>
     </div>
@@ -605,7 +605,7 @@ $recent_logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="sidebar-section">
         <div class="sidebar-label">Account</div>
         <a href="../logout.php" class="nav-item">
-            <div class="nav-icon">🚪</div>
+            <div class="nav-icon">⇥</div>
             Logout
         </a>
     </div>
